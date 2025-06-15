@@ -249,7 +249,6 @@ window.AccountManager = {
         
         if (balanceInfo) {
             const currentBalance = this.getCurrentBalance();
-            balanceInfo.textContent = `Your Balance: ${this.formatCurrency(currentBalance)}`;
         }
     },
 
