@@ -178,29 +178,66 @@ window.AccountManager = {
      * Update balance display on dashboard page
      */
     updateDashboardBalance() {
-        const balanceElement = document.getElementById('totalBalance');
-        const welcomeElement = document.getElementById('welcomeMsg');
-        const transactionHistory = document.getElementById('transaction-current-balance');
+        // More aggressive element selection for mobile compatibility
+        const balanceElement = document.getElementById('totalBalance') || 
+                              document.querySelector('#totalBalance') ||
+                              document.querySelector('.total-balance') ||
+                              document.querySelector('[data-balance="total"]');
+                              
+        const welcomeElement = document.getElementById('welcomeMsg') || 
+                              document.querySelector('#welcomeMsg') ||
+                              document.querySelector('.welcome-msg');
+                              
+        const transactionHistory = document.getElementById('transaction-current-balance') ||
+                                  document.querySelector('#transaction-current-balance') ||
+                                  document.querySelector('.transaction-current-balance');
+        
+        console.log('Mobile Debug - Elements found:', {
+            balanceElement: !!balanceElement,
+            welcomeElement: !!welcomeElement,
+            transactionHistory: !!transactionHistory
+        });
         
         if (balanceElement) {
             const currentBalance = this.getCurrentBalance();
-            balanceElement.textContent = this.formatCurrency(currentBalance);
+            const formattedBalance = this.formatCurrency(currentBalance);
             
-            // Add smooth update animation
+            console.log('Mobile Debug - Updating balance:', formattedBalance);
+            
+            // Multiple update methods for mobile compatibility
+            balanceElement.textContent = formattedBalance;
+            balanceElement.innerText = formattedBalance;
+            
+            // Force reflow for mobile browsers
+            balanceElement.style.display = 'none';
+            balanceElement.offsetHeight; // Trigger reflow
+            balanceElement.style.display = '';
+            
+            // Add smooth update animation (mobile-friendly)
             balanceElement.style.transform = 'scale(1.05)';
             balanceElement.style.transition = 'transform 0.2s ease-in-out';
-            setTimeout(() => {
-                balanceElement.style.transform = 'scale(1)';
-            }, 200);
+            
+            // Use requestAnimationFrame for better mobile performance
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    balanceElement.style.transform = 'scale(1)';
+                }, 200);
+            });
+        } else {
+            console.warn('Mobile Debug - totalBalance element not found');
         }
         
         if (transactionHistory) {
             const currentBalance = this.getCurrentBalance();
-            transactionHistory.textContent = this.formatCurrency(currentBalance);
+            const formattedBalance = this.formatCurrency(currentBalance);
+            transactionHistory.textContent = formattedBalance;
+            transactionHistory.innerText = formattedBalance;
         }
         
         if (welcomeElement) {
-            welcomeElement.textContent = `Welcome, ${this.currentUser.name}`;
+            const welcomeText = `Welcome, ${this.currentUser.name}`;
+            welcomeElement.textContent = welcomeText;
+            welcomeElement.innerText = welcomeText;
         }
     },
 
@@ -224,7 +261,28 @@ window.AccountManager = {
         const otherBalanceElements = document.querySelectorAll('[data-balance-display]');
         otherBalanceElements.forEach(element => {
             const currentBalance = this.getCurrentBalance();
-            element.textContent = this.formatCurrency(currentBalance);
+            const formattedBalance = this.formatCurrency(currentBalance);
+            element.textContent = formattedBalance;
+            element.innerText = formattedBalance;
+        });
+        
+        // Mobile-specific: Force update common balance selectors
+        const mobileBalanceSelectors = [
+            '.balance-amount',
+            '.current-balance',
+            '.account-balance',
+            '[data-balance]',
+            '.balance-display'
+        ];
+        
+        mobileBalanceSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                const currentBalance = this.getCurrentBalance();
+                const formattedBalance = this.formatCurrency(currentBalance);
+                element.textContent = formattedBalance;
+                element.innerText = formattedBalance;
+            });
         });
     },
 
@@ -641,6 +699,8 @@ window.AccountManager = {
             note: formData.get('note') || document.getElementById('note')?.value || ''
         };
 
+        console.log('Mobile Debug - Transfer data:', transferData);
+
         // Show loading state
         const submitBtn = document.getElementById('submitBtn');
         const originalText = submitBtn?.textContent || 'Send Money';
@@ -651,6 +711,17 @@ window.AccountManager = {
 
         // Process transfer immediately (no artificial delay for balance update)
         const result = this.processTransfer(transferData);
+        
+        console.log('Mobile Debug - Transfer result:', result);
+        
+        // Force multiple balance updates for mobile
+        setTimeout(() => {
+            this.updateAllBalanceDisplays();
+        }, 100);
+        
+        setTimeout(() => {
+            this.updateAllBalanceDisplays();
+        }, 500);
         
         // Simulate processing delay for realistic feel, but balance is already updated
         setTimeout(() => {
@@ -663,6 +734,11 @@ window.AccountManager = {
             if (result.success) {
                 this.showSuccessModal(result.message);
                 form.reset(); // Clear the form
+                
+                // Final balance update after modal
+                setTimeout(() => {
+                    this.updateAllBalanceDisplays();
+                }, 100);
             } else {
                 this.showErrorModal(result.message);
             }
