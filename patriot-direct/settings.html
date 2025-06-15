@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Citi Bank</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .navbar {
+      background: rgba(0, 59, 113, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 1rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      background: rgba(0, 59, 113, 0.98);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 2rem;
+    }
+
+    .nav-links li {
+      position: relative;
+    }
+
+    .nav-links a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      text-decoration: none;
+      padding: 1rem;
+      border-radius: 15px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-links a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-links a:hover::before {
+      left: 100%;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-links a.active {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a:hover .nav-icon {
+      transform: rotate(360deg) scale(1.2);
+    }
+
+    .settings-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 600px;
+      margin: 8rem auto 2rem auto;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .settings-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .settings-container h2 {
+      color: white;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+      font-weight: 300;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .settings-group {
+      margin-bottom: 2rem;
+    }
+
+    .settings-group label {
+      display: block;
+      color: white;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .settings-group input {
+      width: 100%;
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .settings-group input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .settings-group input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .change-password-btn, .logout-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .change-password-btn::before, .logout-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .change-password-btn:hover::before, .logout-btn:hover::before {
+      left: 100%;
+    }
+
+    .change-password-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .logout-btn {
+      background: rgba(192, 57, 43, 0.8);
+      border-color: rgba(192, 57, 43, 0.9);
+      margin-top: 2rem;
+      width: 100%;
+    }
+
+    .logout-btn:hover {
+      background: rgba(169, 50, 38, 0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 15px 30px rgba(192, 57, 43, 0.3);
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      color: white;
+      text-align: center;
+      transform: scale(0.8);
+      opacity: 0;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .close {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 2rem;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.7);
+      transition: color 0.3s ease;
+    }
+
+    .close:hover {
+      color: white;
+    }
+
+    .modal-content h3 {
+      margin-bottom: 2rem;
+      font-size: 1.5rem;
+      font-weight: 300;
+    }
+
+    .modal-content input {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .modal-content input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-content input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .modal-content button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      margin-top: 1rem;
+    }
+
+    .modal-content button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    #password-msg {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      min-height: 20px;
+    }
+
+    /* Notification Bar Styles */
+    .notification-bar {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      min-width: 260px;
+      max-width: 350px;
+      background: rgba(0, 59, 113, 0.95);
+      backdrop-filter: blur(20px);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+      display: none;
+      font-size: 1rem;
+      animation: slideIn 0.4s ease-out;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes slideIn {
+      from { 
+        opacity: 0; 
+        transform: translateX(100px);
+      }
+      to { 
+        opacity: 1; 
+        transform: translateX(0);
+      }
+    }
+
+    .notification-bar.success { 
+      background: rgba(39, 174, 96, 0.95);
+      border-color: rgba(39, 174, 96, 0.3);
+    }
+    
+    .notification-bar.error { 
+      background: rgba(192, 57, 43, 0.95);
+      border-color: rgba(192, 57, 43, 0.3);
+    }
+    
+    .notification-bar.info { 
+      background: rgba(0, 59, 113, 0.95);
+      border-color: rgba(0, 59, 113, 0.3);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .floating-elements {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .floating-element {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        gap: 1rem;
+      }
+      
+      .nav-links a {
+        padding: 0.5rem;
+      }
+      
+      .settings-container {
+        margin: 6rem 1rem 2rem 1rem;
+        padding: 1.5rem;
+      }
+      
+      .notification-bar {
+        right: 5px;
+        left: 5px;
+        max-width: unset;
+      }
+    }
+
+    /* Mobile Styles */
+    @media (max-width: 480px) {
+        .settings-container {
+            margin: 6rem 1rem 1rem 1rem;
+            padding: 1.5rem;
+        }
+
+        .settings-container h2 {
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            gap: 0.5rem;
+        }
+
+        .nav-links a {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .settings-group input {
+            padding: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .change-password-btn, .logout-btn {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Tablet Styles */
+    @media (min-width: 481px) and (max-width: 768px) {
+        .settings-container {
+            margin: 7rem 2rem 2rem 2rem;
+        }
+
+        .nav-links {
+            gap: 1rem;
+        }
+
+        .settings-group input {
+            padding: 0.9rem;
+        }
+    }
+
+    /* iPad and Small Laptops */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .settings-container {
+            max-width: 500px;
+        }
+    }
+
+    /* Desktop */
+    @media (min-width: 1025px) and (max-width: 1440px) {
+        .settings-container {
+            max-width: 600px;
+        }
+    }
+
+    /* Large Desktop */
+    @media (min-width: 1441px) {
+        .settings-container {
+            max-width: 700px;
+        }
+    }
+
+    /* Landscape Mode */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .settings-container {
+            margin: 5rem auto 1rem auto;
+        }
+
+        .navbar {
+            padding: 0.5rem;
+        }
+    }
+
+    /* Dark Mode Support */
+    @media (prefers-color-scheme: dark) {
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .settings-container {
+            background: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    /* High Contrast Mode */
+    @media (prefers-contrast: high) {
+        .settings-container {
+            border: 2px solid white;
+        }
+
+        .settings-group input {
+            border: 2px solid white;
+        }
+
+        .change-password-btn, .logout-btn {
+            border: 2px solid white;
+        }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation: none !important;
+            transition: none !important;
+        }
+
+        .settings-container:hover {
+            transform: none;
+        }
+
+        .nav-links a:hover {
+            transform: none;
+        }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-elements" id="floatingElements"></div>
+
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <ul class="nav-links">
+        <li><a href="dashboard.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+          </svg>
+          Home
+        </a></li>
+        <li><a href="transactions.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+          </svg>
+          Transactions
+        </a></li>
+        <li><a href="transfers1.html">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,12L10,8V11H2V13H10V16M20,18V6C20,4.89 19.1,4 18,4H6A2,2 0 0,0 4,6V9H6V6H18V18H6V15H4V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18Z"/>
+          </svg>
+          Transfer
+        </a></li>
+        <li><a href="settings.html" class="active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+          </svg>
+          Settings
+        </a></li>
+        <li><a href="#" onclick="logout()">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+          </svg>
+          Logout
+        </a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Notification Bar -->
+  <div id="notification-bar" class="notification-bar"></div>
+
+  <main>
+    <div class="settings-container">
+      <h2>⚙️ Settings</h2>
+      
+      <div class="settings-group">
+        <label for="email">📧 Email Address</label>
+        <input type="email" id="email" value="michael.wright@email.com" disabled>
+      </div>
+      
+      <div class="settings-group">
+        <button class="change-password-btn" onclick="openPasswordModal()">🔒 Change Password</button>
+      </div>
+      
+      <!-- Password Modal -->
+      <div class="modal" id="passwordModal">
+        <div class="modal-content">
+          <span class="close" onclick="closePasswordModal()">&times;</span>
+          <h3>🔒 Change Password</h3>
+          <input type="password" id="new-password" placeholder="Enter New Password">
+          <input type="password" id="confirm-password" placeholder="Confirm New Password">
+          <button onclick="changePassword()">Update Password</button>
+          <div id="password-msg"></div>
+        </div>
+      </div>
+      
+      <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </main>
+
+  <!-- General Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h3 id="modalTitle"></h3>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize floating elements
+    document.addEventListener('DOMContentLoaded', function() {
+      initFloatingElements();
+      initScrollEffects();
+    });
+
+    // Floating background elements
+    function initFloatingElements() {
+      const container = document.getElementById('floatingElements');
+      for (let i = 0; i < 15; i++) {
+        const element = document.createElement('div');
+        element.className = 'floating-element';
+        element.style.left = Math.random() * 100 + '%';
+        element.style.animationDelay = Math.random() * 20 + 's';
+        element.style.animationDuration = (Math.random() * 10 + 15) + 's';
+        container.appendChild(element);
+      }
+    }
+
+    // Scroll effects
+    function initScrollEffects() {
+      window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+    }
+
+    // Navigation functions
+    function navigateToSection(section) {
+      const links = document.querySelectorAll('.nav-link');
+      links.forEach(link => link.classList.remove('active'));
+      event.target.closest('a').classList.add('active');
+      
+      if (section !== 'Settings') {
+        showNotification(`Navigating to ${section} section...`, "info");
+        setTimeout(() => {
+          showNotification(`${section} section is under development`, "info");
+        }, 1000);
+      }
+    }
+
+    function logout() {
+      showModal('Logout Confirmation', `
+        <div style="text-align: center;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">👋</div>
+          <h3>Confirm Logout</h3>
+          <p>Are you sure you want to logout?</p>
+          <div style="margin-top: 1rem;">
+            <button class="change-password-btn" onclick="confirmLogout()" style="margin: 0 0.5rem; background: rgba(192,57,43,0.8);">Yes, Logout</button>
+            <button class="change-password-btn" onclick="closeModal()" style="margin: 0 0.5rem;">Cancel</button>
+          </div>
+        </div>
+      `);
+    }
+
+    function confirmLogout() {
+      // Show logout animation
+      document.body.style.opacity = '0';
+      document.body.style.transition = 'opacity 1s ease';
+      
+      // Redirect to logout page after animation
+      setTimeout(() => {
+        window.location.href = 'logout.html';
+      }, 1000);
+    }
+
+    // Show modal
+    function showModal(title, content) {
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalContent = document.getElementById('modalContent');
+      
+      modalTitle.textContent = title;
+      modalContent.innerHTML = content;
+      modal.style.display = 'flex';
+      
+      setTimeout(() => {
+        modal.classList.add('show');
+      }, 10);
+    }
+
+    // Close modal
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
+
+    // Check if user is logged in
+    window.addEventListener('load', () => {
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        window.location.href = 'index.html';
+      }
+    });
+
+    // Protect page: redirect to login if not logged in
+    <script>
+      if (localStorage.getItem('isLoggedIn') !== '1') {
+        window.location.href = "login.html";
+      }
+    </script>
+
+    // Notification Bar Function
+    function showNotification(message, type = "info") {
+      const bar = document.getElementById('notification-bar');
+      bar.textContent = message;
+      bar.className = 'notification-bar ' + type;
+      bar.style.display = 'block';
+      
+      // Add slide-out animation before hiding
+      setTimeout(() => {
+        bar.style.animation = 'slideOut 0.4s ease-out forwards';
+      }, 3000);
+      
+      setTimeout(() => {
+        bar.style.display = 'none';
+        bar.style.animation = 'slideIn 0.4s ease-out';
+      }, 3500);
+    }
+
+    // Add slide-out animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideOut {
+        from { 
+          opacity: 1; 
+          transform: translateX(0);
+        }
+        to { 
+          opacity: 0; 
+          transform: translateX(100px);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Modal functions for password change
+    function openPasswordModal() {
+      const modal = document.getElementById('passwordModal');
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        modal.classList.add('show');
+      }, 10);
+    }
+
+    function closePasswordModal() {
+      const modal = document.getElementById('passwordModal');
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.style.display = 'none';
+        // Clear form
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        document.getElementById('password-msg').textContent = '';
+      }, 300);
+    }
+
+    function changePassword() {
+      const newPass = document.getElementById('new-password').value;
+      const confirmPass = document.getElementById('confirm-password').value;
+      const msg = document.getElementById('password-msg');
+      
+      // Clear previous messages
+      msg.textContent = '';
+      msg.style.color = '';
+      
+      if (!newPass || !confirmPass) {
+        msg.style.color = "#f87171";
+        msg.textContent = "⚠️ Please fill in both fields.";
+        return;
+      }
+      
+      if (newPass.length < 6) {
+        msg.style.color = "#f87171";
+        msg.textContent = "⚠️ Password must be at least 6 characters long.";
+        return;
+      }
+      
+      if (newPass !== confirmPass) {
+        msg.style.color = "#f87171";
+        msg.textContent = "⚠️ Passwords do not match.";
+        return;
+      }
+      
+      // Success
+      msg.style.color = "#4ade80";
+      msg.textContent = "✅ Password changed successfully!";
+      showNotification("Password updated successfully!", "success");
+      
+      setTimeout(() => {
+        closePasswordModal();
+      }, 1500);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closePasswordModal();
+      }
+    });
+
+    // Click outside modal to close
+    document.getElementById('passwordModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closePasswordModal();
+      }
+    });
+  </script>
+</body>
+</html>

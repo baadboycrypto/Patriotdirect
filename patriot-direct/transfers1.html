@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transfer Funds - PatriotDirect</title>
+  <script src="account-manager.js"></script>
+  <!-- Login protection and account initialization -->
+  <!-- <script>
+    if (localStorage.getItem('isLoggedIn') !== '1') {
+      window.location.href = "login.html";
+    }
+    if (!localStorage.getItem('accounts')) {
+      localStorage.setItem('accounts', JSON.stringify([
+        {
+          accountNumber: "3432567810",
+          routingNumber: "111000025",
+          name: "Michael Wright",
+          balance: 674590
+        }
+      ]));
+      localStorage.setItem('currentAccount', "3432567810");
+    }
+  </script> -->
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .navbar {
+      background: rgba(0, 59, 113, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 1rem;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .nav-container {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 2rem;
+    }
+    .nav-links li { position: relative; }
+    .nav-links a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      text-decoration: none;
+      padding: 1rem;
+      border-radius: 15px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+    .nav-links a.active {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s ease;
+    }
+    .header {
+      margin-top: 100px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .profile-pic {
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 4px solid white;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .profile-pic:hover {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    #welcomeMsg {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 300;
+      text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 1s ease-out;
+    }
+    .container {
+      padding: 2rem;
+      max-width: 600px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 rgba(31,38,135,0.10);
+      margin-top: 2rem;
+    }
+    .transfer-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .form-group label {
+      color: white;
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 0.3rem;
+    }
+    .form-group input, .form-group select {
+      padding: 0.8rem;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #4ade80;
+      background: rgba(255,255,255,0.25);
+    }
+    .submit-btn {
+      background: linear-gradient(45deg, #4CAF50, #45a049);
+      border: none;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+    .submit-btn:hover {
+      background: #22c55e;
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 8px 24px rgba(76, 175, 80, 0.2);
+    }
+    .transfer-msg {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 15px;
+      display: none;
+      font-weight: 500;
+    }
+    .transfer-msg.success {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      display: block;
+    }
+    .transfer-msg.error {
+      background: rgba(141, 19, 19, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      display: block;
+    }
+    .balance-info {
+      color: #fff;
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    @media (max-width: 700px) {
+      .container { padding: 1rem; }
+      .header { margin-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar" aria-label="Main navigation">
+    <div class="nav-container">
+      <ul class="nav-links">
+        <li><a href="dashboard.html" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+          </svg>
+          Home
+        </a></li>
+        <li><a href="transactions.html" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+          </svg>
+          Transactions
+        </a></li>
+        <li><a href="transfers1.html" class="nav-link active" aria-current="page">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M14,12L10,8V11H2V13H10V16M20,18V6C20,4.89 19.1,4 18,4H6A2,2 0 0,0 4,6V9H6V6H18V18H6V15H4V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18Z"/>
+          </svg>
+          Transfer
+        </a></li>
+        <li><a href="#" onclick="logout(); return false;" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+          </svg>
+          Logout
+        </a></li>
+      </ul>
+    </div>
+  </nav>
+  <header class="header">
+    <div class="user-info">
+      <img src="img/WhatsApp Image 2025-05-13 at 23.16.40_88140607.jpg" alt="Michael Wright profile photo" class="profile-pic pulse">
+      <h1 id="welcomeMsg">Welcome, Michael Wright</h1>
+    </div>
+    <h2 class="page-title">💸 Transfer Funds</h2>
+  </header>
+  <main class="container">
+    <div class="balance-info" id="balanceInfo"></div>
+    <form class="transfer-form" id="transferForm" autocomplete="off">
+      <div class="form-group">
+        <label for="recipient">Recipient Account Number</label>
+        <input type="text" id="recipient" placeholder="Enter account number" required>
+      </div>
+      <div class="form-group">
+        <label for="routingNumber">Routing Number</label>
+        <input type="text" id="routingNumber" placeholder="Enter routing number" required>
+      </div>
+      <div class="form-group">
+        <label for="recipientName">Recipient Name</label>
+        <input type="text" id="recipientName" placeholder="Enter recipient's full name" required>
+      </div>
+      <div class="form-group">
+        <label for="amount">Amount</label>
+        <input type="number" id="amount" placeholder="0.00" required min="1" step="0.01">
+      </div>
+      <div class="form-group">
+        <label for="note">Note (Optional)</label>
+        <input type="text" id="note" placeholder="Add a note for this transfer">
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span id="btnText">Send Money</span>
+      </button>
+    </form>
+    <div id="transferMsg" class="transfer-msg"></div>
+  </main>
+  <footer class="footer">
+    <div style="max-width:600px;margin:auto;">
+      <div style="font-size:1.2rem;font-weight:500;margin-bottom:0.5rem;">PatriotDirect</div>
+      <div style="font-size:0.95rem;opacity:0.8;">
+        Secure. Reliable. Trusted.<br>
+        <a href="privacy.html">Privacy Policy</a> |
+        <a href="terms.html">Terms of Service</a> |
+        <a href="help.html">Help Center</a>
+      </div>
+      <div style="margin-top:1rem;font-size:0.9rem;opacity:0.7;">&copy; 2025 PatriotDirect. All rights reserved.</div>
+    </div>
+  </footer>
+  <script>
+    // Show current user's balance from localStorage
+    function showBalance() {
+      const accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
+      const currentAccount = localStorage.getItem('currentAccount');
+      const user = accounts.find(acc => acc.accountNumber === currentAccount);
+      const balanceInfo = document.getElementById('balanceInfo');
+      if (user && balanceInfo) {
+        balanceInfo.textContent = `Your Balance: $${user.balance.toLocaleString()}`;
+      }
+    }
+    showBalance();
+
+//     // Transfer logic
+//     document.getElementById('transferForm').addEventListener('submit', function(e) {
+//       e.preventDefault();
+//       const recipientAcc = document.getElementById('recipient').value.trim();
+//       const routingNum = document.getElementById('routingNumber').value.trim();
+//       const recipientName = document.getElementById('recipientName').value.trim();
+//       const amount = parseFloat(document.getElementById('amount').value);
+//       const note = document.getElementById('note').value.trim();
+//       const transferMsg = document.getElementById('transferMsg');
+//       let accounts = JSON.parse(localStorage.getItem('accounts'));
+//       const currentAccount = localStorage.getItem('currentAccount');
+//       let sender = accounts.find(acc => acc.accountNumber === currentAccount);
+//  const accountNumber  = '123456789'
+//       // Validation
+//       if (!recipientAcc || !routingNum || !recipientName || isNaN(amount) || amount <= 0) {
+//         transferMsg.textContent = "Please fill in all required fields correctly.";
+//         transferMsg.className = "transfer-msg error";
+//         transferMsg.style.display = "block";
+//         return;
+//       }
+//       if (accountNumber !== recipientAcc) {
+//         transferMsg.textContent = "Cannot transfer to your own account.";
+//         transferMsg.className = "transfer-msg error";
+//         transferMsg.style.display = "block";
+//         return;
+//       }
+//       if (sender.balance < amount) {
+//         transferMsg.textContent = "Insufficient funds.";
+//         transferMsg.className = "transfer-msg error";
+//         transferMsg.style.display = "block";
+//         return;
+//       }
+
+//       // Subtract from sender
+//       sender.balance -= amount;
+//       localStorage.setItem('accounts', JSON.stringify(accounts));
+//       showBalance();
+
+//       transferMsg.textContent = `Transfer of $${amount.toLocaleString()} to ${recipientName} successful!`;
+//       transferMsg.className = "transfer-msg success";
+//       transferMsg.style.display = "block";
+//       this.reset();
+//     });
+
+    // Improved logout function
+    function logout() {
+      const modal = document.createElement('div');
+      modal.className = 'dialog-box';
+      modal.style.display = 'flex';
+      
+      modal.innerHTML = `
+        <div class="dialog-content">
+          <h2>👋 Confirm Logout</h2>
+          <p>Are you sure you want to logout?</p>
+          <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+            <button onclick="confirmLogout()" style="
+              padding: 0.8rem 2rem;
+              border: none;
+              border-radius: 50px;
+              background: linear-gradient(45deg, #ff4b4b, #ff6b6b);
+              color: white;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
+              font-size: 1rem;
+              min-width: 120px;
+            " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(255, 75, 75, 0.4)';" 
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 75, 75, 0.3)';">
+              Yes, Logout
+            </button>
+            <button onclick="closeModal()" style="
+              padding: 0.8rem 2rem;
+              border: 2px solid rgba(255, 255, 255, 0.3);
+              border-radius: 50px;
+              background: rgba(255, 255, 255, 0.1);
+              color: white;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+              font-size: 1rem;
+              min-width: 120px;
+            " onmouseover="this.style.transform='translateY(-3px)'; this.style.background='rgba(255, 255, 255, 0.2)'; this.style.boxShadow='0 6px 20px rgba(255, 255, 255, 0.2)';" 
+            onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(255, 255, 255, 0.1)'; this.style.boxShadow='0 4px 15px rgba(255, 255, 255, 0.1)';">
+              No, Cancel
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Add show class after a small delay for animation
+      setTimeout(() => {
+        modal.classList.add('show');
+      }, 10);
+    }
+
+    function confirmLogout() {
+      // Show logout animation
+      document.body.style.opacity = '0';
+      document.body.style.transition = 'opacity 1s ease';
+      
+      // Redirect to logout page after animation
+      setTimeout(() => {
+        window.location.href = 'logout.html';
+      }, 1000);
+    }
+
+    // // Check if user is logged in
+    // window.addEventListener('load', () => {
+    //   if (localStorage.getItem('isLoggedIn') !== 'true') {
+    //     window.location.href = 'index.html';
+    //   }
+    // });
+  </script>
+</body>
+</html>

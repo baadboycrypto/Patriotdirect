@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Patriot Direct - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .login-container {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
+      width: 100%;
+      max-width: 350px;
+      color: #fff;
+      text-align: center;
+    }
+    .login-container h2 {
+      margin-bottom: 1.5rem;
+      font-weight: 400;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0 1rem 0;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.2);
+      color: #222;
+      font-size: 1rem;
+    }
+    .login-container button {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: 10px;
+      border: none;
+      background: #4ade80;
+      color: #222;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .login-container button:hover {
+      background: #22c55e;
+    }
+    .error-msg {
+      color: #f87171;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .profile-pic {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      margin-bottom: 1rem;
+      border: 3px solid #fff;
+      object-fit: cover;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <img src="img/WhatsApp Image 2025-05-13 at 23.16.40_88140607.jpg" alt="Michael Wright" class="profile-pic">
+    <h2>Patriot Direct Login</h2>
+    <div class="error-msg" id="errorMsg"></div>
+    <form id="loginForm" autocomplete="off">
+      <input type="text" id="username" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+  <script>
+    // Hardcoded credentials for Michael Wright
+    const validUsername = "Michael@wright.com";
+    const validPassword = "123456789";
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+
+      if (username === validUsername && password === validPassword) {
+        // Set login flag in localStorage
+        localStorage.setItem('isLoggedIn', '1');
+        // Set up Michael Wright's account if not present
+        if (!localStorage.getItem('accounts')) {
+          localStorage.setItem('accounts', JSON.stringify([
+            {
+              accountNumber: "1234567890",
+              routingNumber: "111000025",
+              name: "Michael Wright",
+              balance: 674590
+            }
+          ]));
+          localStorage.setItem('currentAccount', "1234567890");
+        }
+        window.location.href = "dashboard.html";
+      } else {
+        errorMsg.textContent = "Invalid username or password.";
+        errorMsg.style.display = "block";
+      }
+    });
+
+    // If already logged in, redirect to dashboard
+    if (localStorage.getItem('isLoggedIn') === '1') {
+      window.location.href = "dashboard.html";
+    }
+  </script>
+</body>
+</html>

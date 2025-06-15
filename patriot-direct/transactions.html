@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transactions - Patriot Direct</title>
+  <!-- Login protection: this must be the very first script in <head> -->
+  <script>
+    if (localStorage.getItem('isLoggedIn') !== '1') {
+      window.location.href = "login.html";
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .navbar {
+      background: rgba(0, 59, 113, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 1rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      background: rgba(0, 59, 113, 0.98);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 2rem;
+    }
+
+    .nav-links li {
+      position: relative;
+    }
+
+    .nav-links a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      text-decoration: none;
+      padding: 1rem;
+      border-radius: 15px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-links a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-links a:hover::before {
+      left: 100%;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-links a.active {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a:hover .nav-icon {
+      transform: rotate(360deg) scale(1.2);
+    }
+
+    .dashboard {
+      margin-top: 100px;
+      padding: 2rem;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .page-title {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 300;
+      text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 1s ease-out;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .balance-info {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem 0;
+      color: white;
+      text-align: center;
+      animation: slideInUp 0.8s ease-out;
+    }
+
+    .balance-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .balance-card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      border-radius: 15px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .balance-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .control-btn.active {
+      background: rgba(0, 59, 113, 0.8);
+      box-shadow: 0 0 20px rgba(0, 59, 113, 0.5);
+    }
+
+    .search-container {
+      margin: 1rem 0;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .transaction-section {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem 0;
+      transition: all 0.3s ease;
+      animation: slideInUp 1s ease-out;
+    }
+
+    .transaction-section:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .transaction-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .transaction-table th,
+    .transaction-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .transaction-table th {
+      background: rgba(0, 59, 113, 0.8);
+      font-weight: 500;
+    }
+
+    .transaction-table tr {
+      transition: all 0.3s ease;
+    }
+
+    .transaction-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.01);
+    }
+
+    .amount-positive {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    .amount-negative {
+      color: #f87171;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-completed {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .status-pending {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .three-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem 0;
+      height: 500px;
+      position: relative;
+      overflow: hidden;
+      display: none;
+    }
+
+    .three-container h2 {
+      color: white;
+      margin-bottom: 1rem;
+      font-weight: 300;
+      text-align: center;
+    }
+
+    #threeCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 15px;
+    }
+
+    .floating-elements {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .floating-element {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      color: white;
+      text-align: center;
+      transform: scale(0.8);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .close-modal {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        gap: 0.5rem;
+      }
+      
+      .nav-links a {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+      
+      .page-title {
+        font-size: 2rem;
+      }
+      
+      .balance-cards {
+        grid-template-columns: 1fr;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+
+    /* Mobile Styles */
+    @media (max-width: 480px) {
+      .dashboard {
+        padding: 1rem;
+        margin-top: 80px;
+      }
+
+      .page-title {
+        font-size: 1.8rem;
+      }
+
+      .nav-links {
+        gap: 0.5rem;
+      }
+
+      .nav-links a {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .nav-icon {
+        width: 20px;
+        height: 20px;
+      }
+
+      .balance-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .control-btn {
+        width: 100%;
+        margin: 0.5rem 0;
+      }
+
+      .transaction-table {
+        font-size: 0.8rem;
+      }
+
+      .transaction-table th,
+      .transaction-table td {
+        padding: 0.5rem;
+      }
+    }
+
+    /* Tablet Styles */
+    @media (min-width: 481px) and (max-width: 768px) {
+      .dashboard {
+        padding: 1.5rem;
+      }
+
+      .balance-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .controls {
+        flex-wrap: wrap;
+      }
+
+      .control-btn {
+        flex: 1 1 calc(50% - 1rem);
+      }
+    }
+
+    /* iPad and Small Laptops */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .dashboard {
+        max-width: 900px;
+      }
+
+      .balance-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* Desktop */
+    @media (min-width: 1025px) and (max-width: 1440px) {
+      .dashboard {
+        max-width: 1200px;
+      }
+    }
+
+    /* Large Desktop */
+    @media (min-width: 1441px) {
+      .dashboard {
+        max-width: 1400px;
+      }
+    }
+
+    /* Landscape Mode */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .dashboard {
+        margin-top: 60px;
+      }
+
+      .navbar {
+        padding: 0.5rem;
+      }
+
+      .nav-links {
+        gap: 1rem;
+      }
+    }
+
+    /* Dark Mode Support */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      }
+
+      .balance-card,
+      .transaction-table {
+        background: rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    /* High Contrast Mode */
+    @media (prefers-contrast: high) {
+      .balance-card,
+      .transaction-table,
+      .control-btn {
+        border: 2px solid white;
+      }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .balance-card:hover,
+      .nav-links a:hover {
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-elements" id="floatingElements"></div>
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <ul class="nav-links">
+        <li><a href="dashboard.html" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+          </svg>
+          Dashboard
+        </a></li>
+        <li><a href="transactions.html" class="nav-link active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+          </svg>
+          Transactions
+        </a></li>
+        <li><a href="transfers1.html" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,12L10,8V11H2V13H10V16M20,18V6C20,4.89 19.1,4 18,4H6A2,2 0 0,0 4,6V9H6V6H18V18H6V15H4V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18Z"/>
+          </svg>
+          Transfer
+        </a></li>
+        <li><a href="#" onclick="logout(); return false;" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+          </svg>
+          Logout
+        </a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="dashboard">
+    <h1 class="page-title">💳 Transaction History</h1>
+    <div class="balance-info">
+      <h2>📊 Account Overview</h2>
+      <div class="balance-cards">
+       
+        <div class="balance-card">
+          <h3>This Month Spent</h3>
+          <p style="font-size: 1.8rem; font-weight: 600; color: #f87171;">-$2,405.50</p>
+        </div>
+        <div class="balance-card">
+          <h3>This Month Income</h3>
+          <p style="font-size: 1.8rem; font-weight: 600; color: #4ade80;">+$6,200.00</p>
+        </div>
+        <div class="balance-card">
+          <h3>Pending Transactions</h3>
+          <p style="font-size: 1.8rem; font-weight: 600; color: #fbbf24;">3</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="control-btn active" onclick="switchView('table')">📊 Table View</button>
+      <!-- <button class="control-btn" onclick="switchView('3d')">🎯 3D Analytics</button> -->
+      <!-- <button class="control-btn" onclick="filterTransactions('all')">🔍 All</button> -->
+      <button class="control-btn" onclick="filterTransactions('income')">💰 Income</button>
+      <button class="control-btn" onclick="filterTransactions('expenses')">💸 Expenses</button>
+      <!-- <button class="control-btn" onclick="exportData()">📤 Export</button> -->
+    </div>
+
+    <div class="search-container">
+      <input type="text" class="search-input" placeholder="🔍 Search transactions..." onkeyup="searchTransactions(this.value)">
+    </div>
+
+    <section class="transaction-section" id="tableSection">
+      <h2 style="color: white; margin-bottom: 1rem;">💼 Recent Transactions</h2>
+      <table class="transaction-table" id="transactionTable">
+        <thead>
+          <tr>
+            <th>📅 Date</th>
+            <th>📝 Description</th>
+            <th>💰 Amount</th>
+            <th>🏷️ Category</th>
+            <th>📊 Status</th>
+            <th>🔧 Actions</th>
+          </tr>
+        </thead>
+        <tbody id="transactionBody">
+          <!-- Transactions will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </section>
+
+    <section class="three-container" id="threeSection">
+      <h2>🎯 3D Transaction Analytics</h2>
+      <canvas id="threeCanvas"></canvas>
+      <div class="controls">
+        <button class="control-btn" onclick="rotateView()">🔄 Rotate</button>
+        <button class="control-btn" onclick="resetCamera()">📷 Reset View</button>
+        <button class="control-btn" onclick="changeVisualization()">🎨 Change Style</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Modal Title</h2>
+      <div id="modalContent">Modal content goes here</div>
+      <button class="close-modal" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let scene, camera, renderer, animationId;
+    let transactionData = [];
+    let filteredData = [];
+    let currentFilter = 'all';
+    let currentView = 'table';
+    let visualizationStyle = 0;
+    let autoRotate = false;
+
+    // Enhanced transaction data
+    const transactions = [
+      { date: '2025-05-24', description: 'Salary Deposit', amount: 3200.00, category: 'Income', status: 'Completed', type: 'income' },
+      { date: '2025-05-23', description: 'Netflix Subscription', amount: -15.99, category: 'Entertainment', status: 'Completed', type: 'expense' },
+      { date: '2025-05-22', description: 'Grocery Store', amount: -125.50, category: 'Food', status: 'Completed', type: 'expense' },
+      { date: '2025-05-21', description: 'Transfer to John', amount: -500.00, category: 'Transfer', status: 'Completed', type: 'expense' },
+      { date: '2025-05-20', description: 'Freelance Payment', amount: 850.00, category: 'Income', status: 'Completed', type: 'income' },
+      { date: '2025-05-19', description: 'Electricity Bill', amount: -120.00, category: 'Utilities', status: 'Pending', type: 'expense' },
+      { date: '2025-05-18', description: 'Amazon Purchase', amount: -89.99, category: 'Shopping', status: 'Completed', type: 'expense' },
+      { date: '2025-05-17', description: 'Gas Station', amount: -65.00, category: 'Transport', status: 'Completed', type: 'expense' },
+      { date: '2025-05-16', description: 'Restaurant Dinner', amount: -78.50, category: 'Food', status: 'Completed', type: 'expense' },
+      { date: '2025-05-15', description: 'Investment Dividend', amount: 1250.00, category: 'Investment', status: 'Completed', type: 'income' },
+      { date: '2025-05-14', description: 'Phone Bill', amount: -55.00, category: 'Utilities', status: 'Pending', type: 'expense' },
+      { date: '2025-05-13', description: 'Coffee Shop', amount: -12.50, category: 'Food', status: 'Completed', type: 'expense' },
+      { date: '2025-05-12', description: 'Online Course', amount: -199.99, category: 'Education', status: 'Completed', type: 'expense' },
+      { date: '2025-05-11', description: 'Refund', amount: 45.00, category: 'Refund', status: 'Completed', type: 'income' },
+      { date: '2025-05-10', description: 'ATM Withdrawal', amount: -200.00, category: 'ATM', status: 'Completed', type: 'expense' },
+    ];
+
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', function() {
+      transactionData = [...transactions];
+      filteredData = [...transactionData];
+      initFloatingElements();
+      initThreeJS();
+      initScrollEffects();
+      populateTransactionTable();
+      animateTableRows();
+    });
+
+    // Floating background elements
+    function initFloatingElements() {
+      const container = document.getElementById('floatingElements');
+      for (let i = 0; i < 25; i++) {
+        const element = document.createElement('div');
+        element.className = 'floating-element';
+        element.style.left = Math.random() * 100 + '%';
+        element.style.animationDelay = Math.random() * 20 + 's';
+        element.style.animationDuration = (Math.random() * 10 + 15) + 's';
+        element.style.width = (Math.random() * 15 + 10) + 'px';
+        element.style.height = element.style.width;
+        container.appendChild(element);
+      }
+    }
+
+    // Three.js initialization
+    function initThreeJS() {
+      const container = document.getElementById('threeCanvas');
+      
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer({ canvas: container, alpha: true, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setClearColor(0x000000, 0);
+
+      // Add lighting
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(10, 10, 5);
+      scene.add(directionalLight);
+
+      createTransactionVisualization();
+      
+      camera.position.set(0, 8, 20);
+      camera.lookAt(0, 0, 0);
+
+      animate3D();
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        const rect = container.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          camera.aspect = rect.width / rect.height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(rect.width, rect.height);
+        }
+      });
+    }
+
+    function createTransactionVisualization() {
+      // Clear existing objects
+      while(scene.children.length > 2) { // Keep lights
+        scene.remove(scene.children[2]);
+      }
+
+      // Group transactions by category
+      const categories = {};
+      filteredData.forEach(transaction => {
+        if (!categories[transaction.category]) {
+          categories[transaction.category] = { total: 0, count: 0, income: 0, expense: 0 };
+        }
+        categories[transaction.category].total += Math.abs(transaction.amount);
+        categories[transaction.category].count++;
+        if (transaction.type === 'income') {
+          categories[transaction.category].income += transaction.amount;
+        } else {
+          categories[transaction.category].expense += Math.abs(transaction.amount);
+        }
+      });
+
+      const categoryNames = Object.keys(categories);
+      const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xfeca57, 0xff9ff3, 0x54a0ff, 0x5f27cd];
+
+      categoryNames.forEach((category, index) => {
+        const data = categories[category];
+        const height = Math.max(data.total / 100, 0.5);
+        
+        let geometry;
+        let material;
+        
+        if (visualizationStyle === 0) {
+          // Cylinders
+          geometry = new THREE.CylinderGeometry(1, 1, height, 8);
+          material = new THREE.MeshPhongMaterial({ 
+            color: colors[index % colors.length],
+            transparent: true,
+            opacity: 0.8,
+            shininess: 100
+          });
+        } else if (visualizationStyle === 1) {
+          // Boxes
+          geometry = new THREE.BoxGeometry(1.8, height, 1.8);
+          material = new THREE.MeshLambertMaterial({ 
+            color: colors[index % colors.length],
+            transparent: true,
+            opacity: 0.9
+          });
+        } else {
+          // Spheres
+          geometry = new THREE.SphereGeometry(Math.max(height / 2, 0.5), 16, 16);
+          material = new THREE.MeshPhongMaterial({ 
+            color: colors[index % colors.length],
+            transparent: true,
+            opacity: 0.7,
+            shininess: 200
+          });
+        }
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        // Position objects in a circle
+        const angle = (index / categoryNames.length) * Math.PI * 2;
+        const radius = 8;
+        mesh.position.x = Math.cos(angle) * radius;
+        mesh.position.z = Math.sin(angle) * radius;
+        mesh.position.y = height / 2;
+        
+        // Add rotation animation
+        mesh.userData = { 
+          originalY: mesh.position.y,
+          rotationSpeed: Math.random() * 0.02 + 0.01,
+          category: category,
+          data: data
+        };
+        
+        scene.add(mesh);
+        
+        // Add text label
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 64;
+        context.fillStyle = '#ffffff';
+        context.font = '20px Arial';
+        context.textAlign = 'center';
+        context.fillText(category, 128, 32);
+        context.fillText(`${data.total.toFixed(0)}`, 128, 52);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.set(mesh.position.x, height + 2, mesh.position.z);
+        sprite.scale.set(4, 1, 1);
+        scene.add(sprite);
+      });
+    }
+
+    function animate3D() {
+      animationId = requestAnimationFrame(animate3D);
+      
+      // Rotate objects
+      scene.children.forEach(child => {
+        if (child.userData && child.userData.rotationSpeed) {
+          child.rotation.y += child.userData.rotationSpeed;
+          
+          // Add floating animation
+          const time = Date.now() * 0.001;
+          child.position.y = child.userData.originalY + Math.sin(time + child.position.x) * 0.5;
+        }
+      });
+      
+      // Auto-rotate camera if enabled
+      if (autoRotate) {
+        const time = Date.now() * 0.0005;
+        camera.position.x = Math.cos(time) * 20;
+        camera.position.z = Math.sin(time) * 20;
+        camera.lookAt(0, 2, 0);
+      }
+      
+      renderer.render(scene, camera);
+    }
+
+    // Scroll effects
+    function initScrollEffects() {
+      window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+    }
+
+    // Populate transaction table
+    function populateTransactionTable() {
+      const tbody = document.getElementById('transactionBody');
+      tbody.innerHTML = '';
+      
+      filteredData.forEach((transaction, index) => {
+        const row = document.createElement('tr');
+        row.style.animationDelay = `${index * 0.1}s`;
+        row.innerHTML = `
+          <td>${formatDate(transaction.date)}</td>
+          <td>${transaction.description}</td>
+          <td class="${transaction.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
+            ${transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+          </td>
+          <td>${transaction.category}</td>
+          <td><span class="status-badge status-${transaction.status.toLowerCase()}">${transaction.status}</span></td>
+          <td>
+            <button class="control-btn" onclick="viewTransaction(${index})" style="padding: 0.5rem; font-size: 0.8rem;">👁️ View</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function animateTableRows() {
+      const rows = document.querySelectorAll('#transactionBody tr');
+      rows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-30px)';
+        row.style.animation = `slideInLeft 0.5s ease-out ${index * 0.1}s forwards`;
+      });
+    }
+
+    // Utility functions
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    }
+
+    // View switching
+    function switchView(view) {
+      currentView = view;
+      const tableSection = document.getElementById('tableSection');
+      const threeSection = document.getElementById('threeSection');
+      const buttons = document.querySelectorAll('.control-btn');
+      
+      buttons.forEach(btn => btn.classList.remove('active'));
+      
+      if (view === 'table') {
+        tableSection.style.display = 'block';
+        threeSection.style.display = 'none';
+        event.target.classList.add('active');
+      } else if (view === '3d') {
+        tableSection.style.display = 'none';
+        threeSection.style.display = 'block';
+        event.target.classList.add('active');
+        
+        // Refresh 3D visualization
+        setTimeout(() => {
+          createTransactionVisualization();
+          const container = document.getElementById('threeCanvas');
+          if (renderer && container.clientWidth > 0) {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+          }
+        }, 100);
+      }
+    }
+
+    // Filtering functions
+    function filterTransactions(filter) {
+      currentFilter = filter;
+      
+      const buttons = document.querySelectorAll('.control-btn');
+      buttons.forEach(btn => {
+        if (btn.textContent.includes('All') || btn.textContent.includes('Income') || btn.textContent.includes('Expenses')) {
+          btn.classList.remove('active');
+        }
+      });
+      event.target.classList.add('active');
+      
+      if (filter === 'all') {
+        filteredData = [...transactionData];
+      } else if (filter === 'income') {
+        filteredData = transactionData.filter(t => t.type === 'income');
+      } else if (filter === 'expenses') {
+        filteredData = transactionData.filter(t => t.type === 'expense');
+      }
+      
+      populateTransactionTable();
+      animateTableRows();
+      
+      if (currentView === '3d') {
+        createTransactionVisualization();
+      }
+    }
+
+    // Search function
+    function searchTransactions(query) {
+      const searchTerm = query.toLowerCase();
+      
+      if (searchTerm === '') {
+        filterTransactions(currentFilter);
+        return;
+      }
+      
+      let baseData = [...transactionData];
+      if (currentFilter === 'income') {
+        baseData = transactionData.filter(t => t.type === 'income');
+      } else if (currentFilter === 'expenses') {
+        baseData = transactionData.filter(t => t.type === 'expense');
+      }
+      
+      filteredData = baseData.filter(transaction => 
+        transaction.description.toLowerCase().includes(searchTerm) ||
+        transaction.category.toLowerCase().includes(searchTerm) ||
+        transaction.status.toLowerCase().includes(searchTerm)
+      );
+      
+      populateTransactionTable();
+      animateTableRows();
+      
+      if (currentView === '3d') {
+        createTransactionVisualization();
+      }
+    }
+
+    // 3D Controls
+    function rotateView() {
+      autoRotate = !autoRotate;
+      event.target.textContent = autoRotate ? '⏸️ Stop' : '🔄 Rotate';
+    }
+
+    function resetCamera() {
+      autoRotate = false;
+      camera.position.set(0, 8, 20);
+      camera.lookAt(0, 0, 0);
+      document.querySelector('[onclick="rotateView()"]').textContent = '🔄 Rotate';
+    }
+
+    function changeVisualization() {
+      visualizationStyle = (visualizationStyle + 1) % 3;
+      createTransactionVisualization();
+      
+      const styles = ['Cylinders', 'Boxes', 'Spheres'];
+      showModal('Visualization Changed', `Now showing: ${styles[visualizationStyle]}`);
+    }
+
+    // Modal functions
+    function showModal(title, content) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalContent').innerHTML = content;
+      const modal = document.getElementById('modal');
+      modal.style.display = 'flex';
+      setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.remove('show');
+      setTimeout(() => modal.style.display = 'none', 300);
+    }
+
+    // Transaction details
+    function viewTransaction(index) {
+      const transaction = filteredData[index];
+      const content = `
+        <div style="text-align: left; margin: 1rem 0;">
+          <p><strong>Date:</strong> ${formatDate(transaction.date)}</p>
+          <p><strong>Description:</strong> ${transaction.description}</p>
+          <p><strong>Amount:</strong> <span class="${transaction.amount >= 0 ? 'amount-positive' : 'amount-negative'}">
+            ${transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+          </span></p>
+          <p><strong>Category:</strong> ${transaction.category}</p>
+          <p><strong>Status:</strong> ${transaction.status}</p>
+          <p><strong>Type:</strong> ${transaction.type === 'income' ? 'Income' : 'Expense'}</p>
+        </div>
+      `;
+      showModal('Transaction Details', content);
+    }
+
+    // Export function
+    function exportData() {
+      const csvContent = [
+        ['Date', 'Description', 'Amount', 'Category', 'Status', 'Type'],
+        ...filteredData.map(t => [t.date, t.description, t.amount, t.category, t.status, t.type])
+      ].map(row => row.join(',')).join('\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      showModal('Export Complete', 'Your transaction data has been exported to CSV format.');
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('isLoggedIn');
+      window.location.href = "login.html";
+    }
+
+    // Show real balance from localStorage
+    function showCurrentBalance() {
+      const accounts = JSON.parse(localStorage.getItem('accounts') || '[]');
+      const currentAccount = localStorage.getItem('currentAccount');
+      const user = accounts.find(acc => acc.accountNumber === currentAccount);
+      const balanceElement = document.getElementById('currentBalance');
+      if (user && balanceElement) {
+        balanceElement.textContent = '$' + user.balance.toLocaleString();
+      }
+    }
+    document.addEventListener('DOMContentLoaded', showCurrentBalance);
+
+    // Add CSS animation for slide in left
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    });
+  </script>
+</body>
+</html>

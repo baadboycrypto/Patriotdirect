@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction History - Patriot Direct</title>
+  <!-- Login protection: this must be the very first script in <head> -->
+  <script>
+    if (localStorage.getItem('isLoggedIn') !== '1') {
+      window.location.href = "login.html";
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .navbar {
+      background: rgba(0, 59, 113, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 1rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .navbar.scrolled {
+      background: rgba(0, 59, 113, 0.98);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-links li {
+      position: relative;
+    }
+
+    .nav-links a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      text-decoration: none;
+      padding: 1rem;
+      border-radius: 15px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .nav-links a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-links a:hover::before {
+      left: 100%;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-links a.active {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      margin-bottom: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a:hover .nav-icon {
+      transform: rotate(360deg) scale(1.2);
+    }
+
+    .header {
+      margin-top: 100px;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .page-title {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 300;
+      text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 1s ease-out;
+      margin-bottom: 1rem;
+    }
+
+    .balance-info {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem auto;
+      max-width: 1200px;
+      color: white;
+      text-align: center;
+    }
+
+    .balance-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .balance-card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      border-radius: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .balance-card:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .container {
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .control-btn.active {
+      background: rgba(0, 59, 113, 0.8);
+      box-shadow: 0 0 20px rgba(0, 59, 113, 0.5);
+    }
+
+    .transaction-section {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem 0;
+      transition: all 0.3s ease;
+    }
+
+    .transaction-section:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .transaction-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .transaction-table th,
+    .transaction-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .transaction-table th {
+      background: rgba(0, 59, 113, 0.8);
+      font-weight: 500;
+    }
+
+    .transaction-table tr {
+      transition: all 0.3s ease;
+    }
+
+    .transaction-table tr:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.01);
+    }
+
+    .amount-positive {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    .amount-negative {
+      color: #f87171;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-completed {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .status-pending {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .three-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem 0;
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+      display: none;
+    }
+
+    .three-container h2 {
+      color: white;
+      margin-bottom: 1rem;
+      font-weight: 300;
+      text-align: center;
+    }
+
+    #threeCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 15px;
+    }
+
+    .floating-elements {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .floating-element {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      color: white;
+      text-align: center;
+      transform: scale(0.8);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .close-modal {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .close-modal:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .search-container {
+      margin: 1rem 0;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .footer {
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(20px);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+      margin-top: 3rem;
+    }
+
+    /* Mobile Styles */
+    @media (max-width: 480px) {
+      .header {
+        padding: 1rem;
+        margin-top: 80px;
+      }
+
+      .page-title {
+        font-size: 1.8rem;
+      }
+
+      .nav-container {
+        padding: 0 0.5rem;
+      }
+
+      .nav-links {
+        gap: 0.3rem;
+        justify-content: space-between;
+      }
+
+      .nav-links a {
+        padding: 0.5rem;
+        font-size: 0.7rem;
+        min-width: 60px;
+      }
+
+      .nav-icon {
+        width: 18px;
+        height: 18px;
+        margin-bottom: 0.2rem;
+      }
+
+      .nav-links a::before {
+        display: none;
+      }
+
+      .nav-links a:hover {
+        transform: none;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .balance-cards {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+
+      .balance-card {
+        padding: 1rem;
+      }
+
+      .balance-card h3 {
+        font-size: 1rem;
+      }
+
+      .balance-card p {
+        font-size: 1.2rem !important;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+
+      .control-btn {
+        width: 100%;
+        margin: 0;
+        padding: 0.8rem;
+        font-size: 0.9rem;
+      }
+
+      .search-container {
+        margin: 0.8rem 0;
+      }
+
+      .search-input {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+      }
+
+      .transaction-section {
+        padding: 1rem;
+        margin: 1rem 0;
+        overflow-x: auto;
+        border-radius: 15px;
+      }
+
+      .transaction-table {
+        font-size: 0.8rem;
+        min-width: 600px;
+      }
+
+      .transaction-table th,
+      .transaction-table td {
+        padding: 0.5rem;
+        white-space: nowrap;
+      }
+
+      .transaction-table th {
+        font-size: 0.75rem;
+      }
+
+      .transaction-table .control-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        min-width: 60px;
+      }
+
+      .status-badge {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+      }
+
+      .modal-content {
+        width: 95%;
+        padding: 1rem;
+        margin: 1rem;
+      }
+
+      .modal-content h2 {
+        font-size: 1.2rem;
+      }
+
+      .modal-content p {
+        font-size: 0.9rem;
+      }
+
+      .close-modal {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* Small Tablets */
+    @media (min-width: 481px) and (max-width: 600px) {
+      .header {
+        padding: 1.2rem;
+      }
+
+      .nav-container {
+        padding: 0 0.7rem;
+      }
+
+      .nav-links {
+        gap: 0.5rem;
+      }
+
+      .nav-links a {
+        padding: 0.7rem;
+        font-size: 0.8rem;
+        min-width: 70px;
+      }
+
+      .nav-icon {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 0.3rem;
+      }
+
+      .transaction-section {
+        padding: 1.2rem;
+      }
+    }
+
+    /* Tablets */
+    @media (min-width: 601px) and (max-width: 768px) {
+      .header {
+        padding: 1.5rem;
+      }
+
+      .balance-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+      }
+
+      .controls {
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .control-btn {
+        flex: 1 1 calc(33.333% - 1rem);
+        font-size: 0.95rem;
+      }
+
+      .transaction-table {
+        font-size: 0.9rem;
+      }
+
+      .transaction-section {
+        padding: 1.5rem;
+      }
+
+      .nav-links {
+        gap: 1rem;
+      }
+
+      .nav-links a {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* Landscape Mode */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .header {
+        margin-top: 60px;
+        padding: 0.8rem;
+      }
+
+      .navbar {
+        padding: 0.5rem;
+      }
+
+      .nav-links {
+        gap: 1rem;
+      }
+
+      .balance-cards {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+      }
+
+      .balance-card {
+        padding: 0.8rem;
+      }
+
+      .transaction-section {
+        margin: 0.8rem 0;
+      }
+
+      .controls {
+        gap: 0.8rem;
+      }
+
+      .control-btn {
+        padding: 0.6rem 1rem;
+      }
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+      }
+
+      .navbar,
+      .controls,
+      .search-container,
+      .footer {
+        display: none;
+      }
+
+      .header {
+        margin-top: 0;
+        padding: 1rem;
+      }
+
+      .page-title {
+        color: black;
+      }
+
+      .balance-info,
+      .transaction-section {
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: none;
+      }
+
+      .balance-card {
+        background: white;
+        border: 1px solid #ddd;
+      }
+
+      .transaction-table {
+        background: white;
+      }
+
+      .transaction-table th {
+        background: #f5f5f5;
+        color: black;
+      }
+
+      .transaction-table td {
+        color: black;
+      }
+
+      .amount-positive {
+        color: #006400;
+      }
+
+      .amount-negative {
+        color: #8b0000;
+      }
+
+      .status-badge {
+        border: 1px solid #ddd;
+      }
+
+      .status-completed {
+        background: #f0fff0;
+        color: #006400;
+      }
+
+      .status-pending {
+        background: #fffaf0;
+        color: #8b4513;
+      }
+    }
+
+    /* Touch Device Optimizations */
+    @media (hover: none) {
+      .control-btn:hover,
+      .nav-links a:hover,
+      .transaction-table tr:hover {
+        transform: none;
+      }
+
+      .control-btn:active,
+      .nav-links a:active {
+        transform: scale(0.98);
+      }
+
+      .transaction-table .control-btn {
+        padding: 0.6rem 1rem;
+        min-width: 70px;
+      }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .balance-card:hover,
+      .nav-links a:hover,
+      .transaction-table tr:hover {
+        transform: none;
+      }
+
+      .nav-links a:hover .nav-icon {
+        transform: none;
+      }
+
+      .floating-elements {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Protect page: redirect to login if not logged in -->
+<script>
+  if (localStorage.getItem('isLoggedIn') !== '1') {
+    window.location.href = "login.html";
+  }
+</script>
+
+  <div class="floating-elements" id="floatingElements"></div>
+
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <ul class="nav-links">
+        <li><a href="home.html" onclick="showSection('home')" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+          </svg>
+          Home
+        </a></li>
+        <li><a href="transactions.html" onclick="showSection('transactions')" class="nav-link active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z"/>
+          </svg>
+          Transactions
+        </a></li>
+        <li><a href="transactionhistory.html" onclick="showSection('history')" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13,3A9,9 0 0,0 4,12H1L4.89,15.89L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3M12,8V13L16.28,15.54L17,14.33L13.5,12.25V8H12Z"/>
+          </svg>
+          History
+        </a></li>
+        <li><a href="transfers1.html" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14,12L10,8V11H2V13H10V16M20,18V6C20,4.89 19.1,4 18,4H6A2,2 0 0,0 4,6V9H6V6H18V18H6V15H4V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18Z"/>
+          </svg>
+          Transfer
+        </a></li>
+        <li><a href="settings.html" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+          </svg>
+          Settings
+        </a></li>
+        <li><a href="logout.html" onclick="logout(); return false;" class="nav-link">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+          </svg>
+          Logout
+        </a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="header">
+    <h1 class="page-title">💳 Transaction History</h1>
+  </header>
+
+  <div class="balance-info">
+    <h2>Account Overview</h2>
+    <div class="balance-cards">
+      <div class="balance-card">
+        <h3>Current Balance</h3>
+        <p  id='transaction-current-balance' style="font-size: 1.5rem; font-weight: 600;"></p>
+      </div>
+      <div class="balance-card">
+        <h3>This Month Spent</h3>
+        <p style="font-size: 1.5rem; font-weight: 600; color: #f87171;">-$3,250.00</p>
+      </div>
+      <div class="balance-card">
+        <h3>This Month Income</h3>
+        <p style="font-size: 1.5rem; font-weight: 600; color: #4ade80;">+$5,500.00</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div class="controls">
+      <button class="control-btn active" onclick="switchView('table')">📊 Table View</button>
+      <button class="control-btn" onclick="switchView('3d')">🎯 3D Visualization</button>
+      <button class="control-btn" onclick="filterTransactions('all')">🔍 All Transactions</button>
+      <button class="control-btn" onclick="filterTransactions('income')">💰 Income Only</button>
+      <button class="control-btn" onclick="filterTransactions('expenses')">💸 Expenses Only</button>
+      <button class="control-btn" onclick="exportTransactions()">📤 Export</button>
+    </div>
+
+    <div class="search-container">
+      <input type="text" class="search-input" placeholder="🔍 Search transactions by recipient, amount, or date..." onkeyup="searchTransactions(this.value)">
+    </div>
+
+    <section class="transaction-section" id="tableSection">
+      <h2 style="color: white; margin-bottom: 1rem;">Recent Transactions</h2>
+      <table class="transaction-table" id="transactionTable">
+        <thead>
+          <tr>
+            <th>📅 Date</th>
+            <th>👤 Recipient</th>
+            <th>💰 Amount</th>
+            <th>🏷️ Category</th>
+            <th>📊 Status</th>
+            <th>🔧 Actions</th>
+          </tr>
+        </thead>
+        <tbody id="transactionBody">
+          <!-- Transactions will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </section>
+
+    <section class="three-container" id="threeSection">
+      <h2>🎯 3D Transaction Visualization</h2>
+      <canvas id="threeCanvas"></canvas>
+      <div class="controls">
+        <button class="control-btn" onclick="rotateView()">🔄 Rotate View</button>
+        <button class="control-btn" onclick="resetCamera()">📷 Reset Camera</button>
+        <button class="control-btn" onclick="changeVisualization()">🎨 Change Style</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2025, Citi Bank. All rights reserved.</p>
+    <a href="#" style="color: #e0e0e0; text-decoration: none;">Privacy Policy</a> | 
+    <a href="#" style="color: #e0e0e0; text-decoration: none;">Terms of Use</a> | 
+    <a href="#" style="color: #e0e0e0; text-decoration: none;">Help Center</a>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Modal Title</h2>
+      <div id="modalContent">Modal content goes here</div>
+      <button class="close-modal" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let scene, camera, renderer, animationId;
+    let transactionData = [];
+    let filteredData = [];
+    let currentFilter = 'all';
+    let currentView = 'table';
+    let visualizationStyle = 0;
+
+    // Sample transaction data
+    const sampleTransactions = [
+      { date: 'May 24, 2025', recipient: 'Salary Deposit', amount: 3500, category: 'Income', status: 'Completed', type: 'income' },
+      { date: 'May 23, 2025', recipient: 'Netflix Subscription', amount: -15.99, category: 'Entertainment', status: 'Completed', type: 'expense' },
+      { date: 'May 22, 2025', recipient: 'Grocery Store', amount: -125.50, category: 'Food', status: 'Completed', type: 'expense' },
+      { date: 'May 21, 2025', recipient: 'John Doe', amount: -200, category: 'Transfer', status: 'Completed', type: 'expense' },
+      { date: 'May 20, 2025', recipient: 'Jane Smith', amount: -500, category: 'Transfer', status: 'Completed', type: 'expense' },
+      { date: 'May 19, 2025', recipient: 'Electricity Bill', amount: -120, category: 'Utilities', status: 'Completed', type: 'expense' },
+      { date: 'May 18, 2025', recipient: 'Freelance Payment', amount: 750, category: 'Income', status: 'Completed', type: 'income' },
+      { date: 'May 17, 2025', recipient: 'Amazon Purchase', amount: -89.99, category: 'Shopping', status: 'Completed', type: 'expense' },
+      { date: 'May 16, 2025', recipient: 'Gas Station', amount: -45.00, category: 'Transport', status: 'Completed', type: 'expense' },
+      { date: 'May 15, 2025', recipient: 'Restaurant', amount: -67.50, category: 'Food', status: 'Completed', type: 'expense' },
+      { date: 'May 14, 2025', recipient: 'Investment Return', amount: 1250, category: 'Investment', status: 'Completed', type: 'income' },
+      { date: 'May 13, 2025', recipient: 'Phone Bill', amount: -65, category: 'Utilities', status: 'Pending', type: 'expense' }
+    ];
+
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', function() {
+      transactionData = [...sampleTransactions];
+      filteredData = [...transactionData];
+      initFloatingElements();
+      initThreeJS();
+      initScrollEffects();
+      populateTransactionTable();
+      animateTableRows();
+    });
+
+    // Floating background elements
+    function initFloatingElements() {
+      const container = document.getElementById('floatingElements');
+      for (let i = 0; i < 20; i++) {
+        const element = document.createElement('div');
+        element.className = 'floating-element';
+        element.style.left = Math.random() * 100 + '%';
+        element.style.animationDelay = Math.random() * 20 + 's';
+        element.style.animationDuration = (Math.random() * 10 + 15) + 's';
+        container.appendChild(element);
+      }
+    }
+
+    // Three.js initialization
+    function initThreeJS() {
+      try {
+        const container = document.getElementById('threeCanvas');
+        if (!container) {
+          console.error('Three.js container not found');
+          return;
+        }
+        
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ canvas: container, alpha: true, antialias: true });
+        
+        if (!renderer) {
+          console.error('WebGL not supported');
+          document.getElementById('threeSection').innerHTML = '<p style="color: white; text-align: center;">3D visualization is not supported in your browser. Please use a modern browser with WebGL support.</p>';
+          return;
+        }
+
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setClearColor(0x000000, 0);
+
+        createTransactionVisualization();
+        
+        camera.position.z = 15;
+        camera.position.y = 5;
+        camera.lookAt(0, 0, 0);
+
+        animate3D();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          try {
+            const rect = container.getBoundingClientRect();
+            camera.aspect = rect.width / rect.height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(rect.width, rect.height);
+          } catch (error) {
+            console.error('Error handling resize:', error);
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing Three.js:', error);
+        document.getElementById('threeSection').innerHTML = '<p style="color: white; text-align: center;">Failed to initialize 3D visualization. Please try refreshing the page.</p>';
+      }
+    }
+
+    function createTransactionVisualization() {
+      // Clear existing objects
+      while(scene.children.length > 0) {
+        scene.remove(scene.children[0]);
+      }
+
+      // Group transactions by category
+      const categories = {};
+      filteredData.forEach(transaction => {
+        if (!categories[transaction.category]) {
+          categories[transaction.category] = { total: 0, count: 0 };
+        }
+        categories[transaction.category].total += Math.abs(transaction.amount);
+        categories[transaction.category].count++;
+      });
+
+      const categoryNames = Object.keys(categories);
+      const colors = [0xff6384, 0x36a2eb, 0xffcd56, 0x4bc0c0, 0x9966ff, 0xff9f40, 0xff6384];
+
+      categoryNames.forEach((category, index) => {
+        const height = categories[category].total / 100;
+        
+        let geometry;
+        if (visualizationStyle === 0) {
+          geometry = new THREE.CylinderGeometry(0.8, 0.8, height, 8);
+        } else if (visualizationStyle === 1) {
+          geometry = new THREE.BoxGeometry(1.5, height, 1.5);
+        } else {
+          geometry = new THREE.SphereGeometry(Math.sqrt(height), 16, 16);
+        }
+        
+        const material = new THREE.MeshPhongMaterial({ 
+          color: colors[index % colors.length],
+          transparent: true,
+          opacity: 0.8
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        mesh.position.x = (index - categoryNames.length / 2) * 3;
+        if (visualizationStyle === 2) {
+          mesh.position.y = 0;
+        } else {
+          mesh.position.y = height / 2;
+        }
+        mesh.userData = { category, total: categories[category].total, count: categories[category].count };
+        
+        scene.add(mesh);
+      });
+
+      // Add lighting
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(10, 10, 5);
+      scene.add(directionalLight);
+
+      // Add point lights for more dramatic effect
+      const pointLight1 = new THREE.PointLight(0xff0040, 1, 50);
+      pointLight1.position.set(10, 10, 10);
+      scene.add(pointLight1);
+
+      const pointLight2 = new THREE.PointLight(0x0040ff, 1, 50);
+      pointLight2.position.set(-10, 10, 10);
+      scene.add(pointLight2);
+    }
+
+    function animate3D() {
+      animationId = requestAnimationFrame(animate3D);
+      
+      // Rotate the scene slightly
+      scene.rotation.y += 0.005;
+      
+      renderer.render(scene, camera);
+    }
+
+    // Scroll effects
+    function initScrollEffects() {
+      window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+    }
+
+    // Populate transaction table
+    function populateTransactionTable() {
+      const tbody = document.getElementById('transactionBody');
+      if (!tbody) {
+        console.error('Transaction table body not found');
+        return;
+      }
+
+      // Show loading state
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading transactions...</td></tr>';
+      
+      try {
+        // Simulate loading delay (remove in production)
+        setTimeout(() => {
+          tbody.innerHTML = '';
+          
+          if (filteredData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No transactions found</td></tr>';
+            return;
+          }
+          
+          filteredData.forEach((transaction, index) => {
+            const row = document.createElement('tr');
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(20px)';
+            
+            const amountClass = transaction.amount > 0 ? 'amount-positive' : 'amount-negative';
+            const statusClass = transaction.status === 'Completed' ? 'status-completed' : 'status-pending';
+            
+            row.innerHTML = `
+              <td>${transaction.date}</td>
+              <td>${transaction.recipient}</td>
+              <td class="${amountClass}">${Math.abs(transaction.amount).toFixed(2)}</td>
+              <td>${transaction.category}</td>
+              <td><span class="status-badge ${statusClass}">${transaction.status}</span></td>
+              <td>
+                <button class="control-btn" onclick="viewDetails(${index})" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">View</button>
+              </td>
+            `;
+            
+            tbody.appendChild(row);
+            
+            // Animate row appearance
+            setTimeout(() => {
+              row.style.transition = 'all 0.5s ease';
+              row.style.opacity = '1';
+              row.style.transform = 'translateY(0)';
+            }, index * 100);
+          });
+        }, 500);
+      } catch (error) {
+        console.error('Error populating transaction table:', error);
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #f87171;">Error loading transactions. Please try refreshing the page.</td></tr>';
+      }
+    }
+
+    // Animate table rows on load
+    function animateTableRows() {
+      const rows = document.querySelectorAll('#transactionBody tr');
+      rows.forEach((row, index) => {
+        setTimeout(() => {
+          row.style.animation = 'fadeInUp 0.6s ease forwards';
+        }, index * 50);
+      });
+    }
+
+    // Navigation functions
+    function showSection(sectionName) {
+      // Update active nav link
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+      });
+      event.target.closest('.nav-link').classList.add('active');
+      
+      // // // Show corresponding content (placeholder for now)
+      // if (sectionName !== 'transaction') {
+      //   showModal('Navigation', `You clicked on ${sectionName}. This is a demo - only the Transactions section is fully functional.`);
+      // }
+    }
+
+    function logout() {
+      showModal('Logout Confirmation', `
+        <div style="text-align: center;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">👋</div>
+          <h3>Confirm Logout</h3>
+          <p>Are you sure you want to logout?</p>
+          <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+            <button onclick="confirmLogout()" style="
+              padding: 0.8rem 2rem;
+              border: none;
+              border-radius: 50px;
+              background: linear-gradient(45deg, #ff4b4b, #ff6b6b);
+              color: white;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
+              font-size: 1rem;
+              min-width: 120px;
+            " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(255, 75, 75, 0.4)';" 
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 75, 75, 0.3)';">
+              Yes, Logout
+            </button>
+            <button onclick="closeModal()" style="
+              padding: 0.8rem 2rem;
+              border: 2px solid rgba(255, 255, 255, 0.3);
+              border-radius: 50px;
+              background: rgba(255, 255, 255, 0.1);
+              color: white;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+              font-size: 1rem;
+              min-width: 120px;
+            " onmouseover="this.style.transform='translateY(-3px)'; this.style.background='rgba(255, 255, 255, 0.2)'; this.style.boxShadow='0 6px 20px rgba(255, 255, 255, 0.2)';" 
+            onmouseout="this.style.transform='translateY(0)'; this.style.background='rgba(255, 255, 255, 0.1)'; this.style.boxShadow='0 4px 15px rgba(255, 255, 255, 0.1)';">
+              No, Cancel
+            </button>
+          </div>
+        </div>
+      `);
+    }
+
+    function confirmLogout() {
+      // Show logout animation
+      document.body.style.opacity = '0';
+      document.body.style.transition = 'opacity 1s ease';
+      
+      // Redirect to logout page after animation
+      setTimeout(() => {
+        window.location.href = 'logout.html';
+      }, 1000);
+    }
+
+    // View switching
+    function switchView(viewType) {
+      if (currentView === '3d' && viewType === 'table') {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+        if (renderer) {
+          renderer.dispose();
+        }
+      }
+      
+      currentView = viewType;
+      
+      // Update button states
+      document.querySelectorAll('.control-btn').forEach(btn => {
+        if (btn.textContent.includes('Table View') || btn.textContent.includes('3D Visualization')) {
+          btn.classList.remove('active');
+        }
+      });
+      
+      if (viewType === 'table') {
+        document.getElementById('tableSection').style.display = 'block';
+        document.getElementById('threeSection').style.display = 'none';
+        document.querySelector('[onclick="switchView(\'table\')"]').classList.add('active');
+      } else if (viewType === '3d') {
+        document.getElementById('tableSection').style.display = 'none';
+        document.getElementById('threeSection').style.display = 'block';
+        document.querySelector('[onclick="switchView(\'3d\')"]').classList.add('active');
+        
+        // Recreate visualization when switching to 3D view
+        setTimeout(() => {
+          createTransactionVisualization();
+        }, 100);
+      }
+    }
+
+    // Filter transactions
+    function filterTransactions(filterType) {
+      currentFilter = filterType;
+      
+      // Update button states
+      document.querySelectorAll('.control-btn').forEach(btn => {
+        if (btn.textContent.includes('All Transactions') || 
+            btn.textContent.includes('Income Only') || 
+            btn.textContent.includes('Expenses Only')) {
+          btn.classList.remove('active');
+        }
+      });
+      
+      switch (filterType) {
+        case 'all':
+          filteredData = [...transactionData];
+          document.querySelector('[onclick="filterTransactions(\'all\')"]').classList.add('active');
+          break;
+        case 'income':
+          filteredData = transactionData.filter(t => t.type === 'income');
+          document.querySelector('[onclick="filterTransactions(\'income\')"]').classList.add('active');
+          break;
+        case 'expenses':
+          filteredData = transactionData.filter(t => t.type === 'expense');
+          document.querySelector('[onclick="filterTransactions(\'expenses\')"]').classList.add('active');
+          break;
+      }
+      
+      populateTransactionTable();
+      if (currentView === '3d') {
+        createTransactionVisualization();
+      }
+    }
+
+    // Search transactions
+    function searchTransactions(searchTerm) {
+      try {
+        // Sanitize input
+        searchTerm = searchTerm.trim().replace(/[<>]/g, '');
+        
+        if (!searchTerm) {
+          // Reset to current filter if search is empty
+          filterTransactions(currentFilter);
+          return;
+        }
+        
+        const searchLower = searchTerm.toLowerCase();
+        filteredData = transactionData.filter(transaction => {
+          try {
+            return transaction.recipient.toLowerCase().includes(searchLower) ||
+                   transaction.category.toLowerCase().includes(searchLower) ||
+                   transaction.date.toLowerCase().includes(searchLower) ||
+                   Math.abs(transaction.amount).toString().includes(searchTerm);
+          } catch (error) {
+            console.error('Error filtering transaction:', error);
+            return false;
+          }
+        });
+        
+        populateTransactionTable();
+        if (currentView === '3d') {
+          createTransactionVisualization();
+        }
+      } catch (error) {
+        console.error('Error searching transactions:', error);
+        showModal('Search Error', 'An error occurred while searching. Please try again.');
+      }
+    }
+
+    // Export transactions
+    function exportTransactions() {
+      const csvContent = "data:text/csv;charset=utf-8," + 
+        "Date,Recipient,Amount,Category,Status\n" +
+        filteredData.map(t => `${t.date},${t.recipient},${t.amount},${t.category},${t.status}`).join('\n');
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'transactions.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showModal('Export Complete', 'Your transactions have been exported to CSV format.');
+    }
+
+    // 3D View controls
+    function rotateView() {
+      if (scene) {
+        scene.rotation.y += Math.PI / 4;
+      }
+    }
+
+    function resetCamera() {
+      if (camera) {
+        camera.position.set(0, 5, 15);
+        camera.lookAt(0, 0, 0);
+      }
+    }
+
+    function changeVisualization() {
+      visualizationStyle = (visualizationStyle + 1) % 3;
+      createTransactionVisualization();
+      
+      const styles = ['Cylinders', 'Boxes', 'Spheres'];
+      showModal('Visualization Changed', `Now showing: ${styles[visualizationStyle]}`);
+    }
+
+    // View transaction details
+    function viewDetails(index) {
+      try {
+        if (index < 0 || index >= filteredData.length) {
+          console.error('Invalid transaction index:', index);
+          showModal('Error', 'Transaction not found. Please try again.');
+          return;
+        }
+
+        const transaction = filteredData[index];
+        if (!transaction) {
+          console.error('Transaction data is missing');
+          showModal('Error', 'Transaction data is not available. Please try again.');
+          return;
+        }
+
+        const content = `
+          <div style="text-align: left; margin: 1rem 0;">
+            <p><strong>Date:</strong> ${transaction.date || 'N/A'}</p>
+            <p><strong>Recipient:</strong> ${transaction.recipient || 'N/A'}</p>
+            <p><strong>Amount:</strong> ${transaction.amount ? Math.abs(transaction.amount).toFixed(2) : 'N/A'}</p>
+            <p><strong>Category:</strong> ${transaction.category || 'N/A'}</p>
+            <p><strong>Status:</strong> ${transaction.status || 'N/A'}</p>
+            <p><strong>Type:</strong> ${transaction.type ? (transaction.type === 'income' ? 'Income' : 'Expense') : 'N/A'}</p>
+          </div>
+        `;
+        
+        showModal('Transaction Details', content);
+      } catch (error) {
+        console.error('Error viewing transaction details:', error);
+        showModal('Error', 'Failed to load transaction details. Please try again.');
+      }
+    }
+
+    // Modal functions
+    function showModal(title, content) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalContent').innerHTML = content;
+      const modal = document.getElementById('modal');
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        modal.classList.add('show');
+      }, 10);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+      const modal = document.getElementById('modal');
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+      if (e.key === '1') {
+        switchView('table');
+      }
+      if (e.key === '2') {
+        switchView('3d');
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      
+      // Cleanup Three.js resources
+      if (scene) {
+        scene.traverse((object) => {
+          if (object.geometry) {
+            object.geometry.dispose();
+          }
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach(material => material.dispose());
+            } else {
+              object.material.dispose();
+            }
+          }
+        });
+      }
+      
+      if (renderer) {
+        renderer.dispose();
+      }
+    });
+  </script>
+</body>
+</html>
