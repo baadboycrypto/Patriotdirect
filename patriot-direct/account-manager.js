@@ -64,7 +64,7 @@ window.AccountManager = {
     },
 
     /**
-     * Set balance in localStorage
+     * Set balance in localStorage and immediately update UI
      * @param {number} amount - New balance amount
      */
     setBalance(amount) {
@@ -76,6 +76,9 @@ window.AccountManager = {
         
         localStorage.setItem(this.STORAGE_KEYS.BALANCE, newBalance.toString());
         console.log(`Balance updated to: ${this.formatCurrency(newBalance)}`);
+        
+        // Immediately update all balance displays
+        this.updateAllBalanceDisplays();
     },
 
     /**
@@ -163,21 +166,37 @@ window.AccountManager = {
     },
 
     /**
+     * Update all balance displays across the application
+     */
+    updateAllBalanceDisplays() {
+        this.updateDashboardBalance();
+        this.updateTransferBalance();
+        this.updateAnyOtherBalanceElements();
+    },
+
+    /**
      * Update balance display on dashboard page
      */
     updateDashboardBalance() {
         const balanceElement = document.getElementById('totalBalance');
         const welcomeElement = document.getElementById('welcomeMsg');
         const transactionHistory = document.getElementById('transaction-current-balance');
+        
         if (balanceElement) {
             const currentBalance = this.getCurrentBalance();
             balanceElement.textContent = this.formatCurrency(currentBalance);
-            transactionHistory.textContent = this.formatCurrency(currentBalance);
+            
             // Add smooth update animation
             balanceElement.style.transform = 'scale(1.05)';
+            balanceElement.style.transition = 'transform 0.2s ease-in-out';
             setTimeout(() => {
                 balanceElement.style.transform = 'scale(1)';
             }, 200);
+        }
+        
+        if (transactionHistory) {
+            const currentBalance = this.getCurrentBalance();
+            transactionHistory.textContent = this.formatCurrency(currentBalance);
         }
         
         if (welcomeElement) {
@@ -195,6 +214,18 @@ window.AccountManager = {
             const currentBalance = this.getCurrentBalance();
             balanceInfo.textContent = `Your Balance: ${this.formatCurrency(currentBalance)}`;
         }
+    },
+
+    /**
+     * Update any other balance elements that might exist
+     */
+    updateAnyOtherBalanceElements() {
+        // Update any other elements that might show balance
+        const otherBalanceElements = document.querySelectorAll('[data-balance-display]');
+        otherBalanceElements.forEach(element => {
+            const currentBalance = this.getCurrentBalance();
+            element.textContent = this.formatCurrency(currentBalance);
+        });
     },
 
     /**
@@ -240,9 +271,8 @@ window.AccountManager = {
             status: 'completed'
         });
 
-        // Update UI
-        this.updateDashboardBalance();
-        this.updateTransferBalance();
+        // Force immediate UI update - this ensures totalBalance updates right away
+        this.updateAllBalanceDisplays();
 
         return {
             success: true,
@@ -319,8 +349,6 @@ window.AccountManager = {
      */
     resetBalance() {
         this.setBalance(this.INITIAL_BALANCE);
-        this.updateDashboardBalance();
-        this.updateTransferBalance();
         console.log('Balance reset to initial amount');
     },
 
@@ -621,10 +649,11 @@ window.AccountManager = {
             submitBtn.disabled = true;
         }
 
-        // Simulate processing delay for realistic feel
+        // Process transfer immediately (no artificial delay for balance update)
+        const result = this.processTransfer(transferData);
+        
+        // Simulate processing delay for realistic feel, but balance is already updated
         setTimeout(() => {
-            const result = this.processTransfer(transferData);
-            
             // Reset button
             if (submitBtn) {
                 submitBtn.textContent = originalText;
