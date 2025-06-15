@@ -247,9 +247,10 @@ window.AccountManager = {
     updateTransferBalance() {
         const balanceInfo = document.getElementById('balanceInfo');
         
-        if (balanceInfo) {
-            const currentBalance = this.getCurrentBalance();
-        }
+        // if (balanceInfo) {
+        //     const currentBalance = this.getCurrentBalance();
+        //     balanceInfo.textContent = `Your Balance: ${this.formatCurrency(currentBalance)}`;
+        // }
     },
 
     /**
