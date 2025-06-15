@@ -14,7 +14,7 @@ window.AccountManager = {
     },
 
     // Initial balance amount (used only for first-time initialization)
-    INITIAL_BALANCE: 674590.00,
+    INITIAL_BALANCE: 669240.00,
     
     // Storage keys
     STORAGE_KEYS: {
