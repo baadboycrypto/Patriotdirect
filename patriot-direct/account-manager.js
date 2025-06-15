@@ -179,10 +179,10 @@ window.AccountManager = {
      */
     updateDashboardBalance() {
         // More aggressive element selection for mobile compatibility
-        const balanceElement = document.getElementById('totalBalance') || 
-                              document.querySelector('#totalBalance') ||
-                              document.querySelector('.total-balance') ||
-                              document.querySelector('[data-balance="total"]');
+        // const balanceElement = document.getElementById('totalBalance') || 
+        //                       document.querySelector('#totalBalance') ||
+        //                       document.querySelector('.total-balance') ||
+        //                       document.querySelector('[data-balance="total"]');
                               
         const welcomeElement = document.getElementById('welcomeMsg') || 
                               document.querySelector('#welcomeMsg') ||
@@ -205,8 +205,8 @@ window.AccountManager = {
             console.log('Mobile Debug - Updating balance:', formattedBalance);
             
             // Multiple update methods for mobile compatibility
-            balanceElement.textContent = formattedBalance;
-            balanceElement.innerText = formattedBalance;
+            // balanceElement.textContent = formattedBalance;
+            // balanceElement.innerText = formattedBalance;
             
             // Force reflow for mobile browsers
             balanceElement.style.display = 'none';
