@@ -219,8 +219,17 @@
       const password = document.getElementById('password').value;
       const errorMsg = document.getElementById('errorMsg');
 
-      // Always show restriction modal regardless of credentials
-      showRestrictionModal();
+      // Hide any previous error messages
+      errorMsg.style.display = "none";
+
+      if (username === validUsername && password === validPassword) {
+        // Show restriction modal only for correct credentials
+        showRestrictionModal();
+      } else {
+        // Show error message for incorrect credentials
+        errorMsg.textContent = "Invalid username or password.";
+        errorMsg.style.display = "block";
+      }
     });
 
     function showRestrictionModal() {
