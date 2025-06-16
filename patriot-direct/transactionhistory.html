@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Transaction History - Patriot Direct</title>
   <!-- Login protection: this must be the very first script in <head> -->
+     <!-- Add this to dashboard.html, transfer.html, and any other protected pages -->
+<script src="auth-system.js"></script>
   <script>
     if (localStorage.getItem('isLoggedIn') !== '1') {
       window.location.href = "login.html";
     }
   </script>
+ 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
